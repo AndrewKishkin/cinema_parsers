@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\BuildingBlocks\Bus\MassTransit.Core\MassTransit.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\BuildingBlocks\Bus\MessageContracts\MessageContracts.Cinema\MessageContracts.Cinema.csproj" />
+    <ProjectReference Include="..\..\..\..\BuildingBlocks\Bus\MessageContracts\MessageContracts.Parser\MessageContracts.Parser.csproj" />
+    <ProjectReference Include="..\..\Cinema.Domain\Cinema.Domain.csproj" />
+    <ProjectReference Include="..\CinemasParser.Core\CinemasParser.Core.csproj" />
+  </ItemGroup>
+
+</Project>
