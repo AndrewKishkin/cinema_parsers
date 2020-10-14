@@ -54,22 +54,25 @@ namespace Empirecinemas.Parser.Service
             });
             if (result.IsSuccess)
             {
-                dynamic json = JObject.Parse(result.Response);
                 List<Parse.Movie> movies = new List<Parse.Movie>();
-                foreach (var c_movie in json.Data)
+                dynamic json = JObject.Parse(result.Response);
+                var arr = json.Data;
+                foreach (var c_movie in arr)
                 {
-                    Movie temp_movie = movies.FirstOrDefault(x => x.ExternalId == c_movie.MovieID);
+                    string movie_id = c_movie.MovieID;
+                    Movie temp_movie = movies.FirstOrDefault(x => x.ExternalId == movie_id);
                     if(temp_movie==null)
                     {
                         Movie movie = new Movie();
                         movie.Title = c_movie.Title;
-                        movie.Url = "";
                         movie.ExternalId = c_movie.MovieID;
                         Session session = new Session();
                         session.Format = c_movie.Format;
-                        session.Url = $"https://empirecinemas.com.sa/checkout/{movie.ExternalId}/{c_movie.SchID}/1";
-                        string date = c_movie.ShowDate+" "+ c_movie.ShowTime;
-                        session.ShowTime= GetParsedDate(date);
+                        session.Url = $"https://empirecinemas.com.sa/checkout/{c_movie.MovieID}/{c_movie.SchID}/1";
+                        string date = c_movie.ShowDate + " " + c_movie.ShowTime;
+                        session.CinemaId = c_movie.CinemaID;
+                        session.MovieId = c_movie.MovieID;
+                        session.ShowTime = GetParsedDate(date);
                         movie.Sessions.Add(session);
                         movies.Add(movie);
                     }
@@ -79,11 +82,13 @@ namespace Empirecinemas.Parser.Service
                         session.Format = c_movie.Format;
                         session.Url = $"https://empirecinemas.com.sa/checkout/{c_movie.MovieID}/{c_movie.SchID}/1";
                         string date = c_movie.ShowDate + " " + c_movie.ShowTime;
+                        session.CinemaId = c_movie.CinemaID;
+                        session.MovieId = movie_id;
                         session.ShowTime = GetParsedDate(date);
-                        movies.First(x=>x.ExternalId==c_movie.MovieID).Sessions.Add(session);
+                        movies.First(x=>x.ExternalId== movie_id).Sessions.Add(session);
                     }
-                    return new ParseResult<List<Movie>>(Result.Success) { Data = movies };
                 }
+                return new ParseResult<List<Movie>>(Result.Success) { Data = movies };
             }
             return new ParseResult<List<Movie>>(Result.Error);
         }
