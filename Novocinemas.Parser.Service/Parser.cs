@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Parse = CinemasParser.Models;
@@ -23,11 +24,52 @@ namespace Novocinemas.Parser.Service
 
         public async Task<ParseResult<Data>> ExecuteAsync()
         {
-            return await GetDataAsync();
+            List<Movie> c_movies = new List<Movie>();
+            List<Movie> movies = new List<Movie>();
+            List<Cinema> cinemas = new List<Cinema>();
+            bool isadded = false;
+            for(int i=0; i<8; i++)
+            {
+                var data = await GetDataAsync(i);
+                if(data.IsSuccess)
+                {
+                    if (!isadded)
+                    {
+                        cinemas.AddRange(data.Data.Cinemas);
+                        isadded = true;
+                    }
+                    c_movies.AddRange(data.Data.Movies);
+                }    
+            }
+            var group_movies = c_movies.GroupBy(g => g.ExternalId);
+
+            foreach (IGrouping<string, Movie> g in group_movies)
+            {
+                Movie movie = new Movie() { ExternalId = g.Key };
+                List<Session> sessions = new List<Session>();
+
+                foreach (var t in g)
+                {
+                    movie.Title = t.Title.Trim();
+                    movie.Url = t.Url;
+
+                    sessions.AddRange(t.Sessions);
+                }
+                movie.Sessions = sessions;
+                movies.Add(movie);
+            }
+            return new ParseResult<Parse.Data>(Result.Success)
+            {
+                Data = new Data
+                {
+                    Cinemas = cinemas,
+                    Movies = movies
+                }
+            };
         }
 
         #region Data
-        private async Task<ParseResult<Data>> GetDataAsync()
+        private async Task<ParseResult<Data>> GetDataAsync(int days)
         {
             ConcurrentDictionary<string, string> headers = new ConcurrentDictionary<string, string>();
             headers.TryAdd("ContentType", "application/x-www-form-urlencoded");
@@ -36,7 +78,7 @@ namespace Novocinemas.Parser.Service
             ConcurrentDictionary<string, string> parameters = new ConcurrentDictionary<string, string>();
             parameters.TryAdd("movieid", "");
             parameters.TryAdd("cinemaid", "");
-            parameters.TryAdd("date", DateTime.Now.ToString("yyyy-MM-dd"));
+            parameters.TryAdd("date", DateTime.Now.AddDays(days).ToString("yyyy-MM-dd"));
             parameters.TryAdd("experience", "");
 
             var result = await _http.Execute(o =>
